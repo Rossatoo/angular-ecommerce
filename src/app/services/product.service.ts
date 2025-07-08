@@ -16,6 +16,16 @@ export class ProductService {
 
   constructor(private httpClient: HttpClient) { }
 
+                                    //Observar o tipo de retorno
+  getProduct(theProductId: number): Observable<Product>{
+    
+    // - build URL on product id
+    const productUrl = `${this.baseUrl}/${theProductId}`;
+
+    return this.httpClient.get<Product>(productUrl);
+
+  }
+
   //mapear os dados do serviço REST de dados do Spring para uma matriz de produtos
 
   // - Search Product based on the category
@@ -24,7 +34,7 @@ export class ProductService {
     //build URL based on the category id
     const searchUrl = `${this.baseUrl}/search/findByCategoryId?id=${theCategoryId}`;
 
-    return this.getProducts(searchUrl);
+    return this.getProducts(searchUrl); 
   }    
 
   // - Search Product based on the Keywords
