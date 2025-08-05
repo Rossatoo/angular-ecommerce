@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { CartItem } from 'src/app/common/cart-item';
 import { Product } from 'src/app/common/product';
+import { CartService } from 'src/app/services/cart.service';
 import { ProductService } from 'src/app/services/product.service';
 
 @Component({
@@ -12,9 +14,18 @@ export class ProductListComponent implements OnInit {
 
   products: Product[] = []; //Inicia uma matriz de Produtos
   currentCategoryId: number = 1;
+  previousCategoryId: number = 1;
   searchMode: boolean = false;
 
-  constructor(private productService: ProductService,            
+  //new properties for pagination
+  thePageNumber: number = 1;
+  thePageSize: number = 10;
+  theTotalElements: number = 0;
+
+  previousKeyword: string = "";
+
+  constructor(private productService: ProductService,   
+              private cartService: CartService,         
               private route: ActivatedRoute) { }
 
   ngOnInit(): void {
@@ -39,12 +50,19 @@ export class ProductListComponent implements OnInit {
   handleSearchProducts(){
     const theKeyord: string = this.route.snapshot.paramMap.get('keyword')!;
 
+
+    if(this.previousKeyword != theKeyord){
+      this.thePageNumber = 1;
+    }
+
+    this.previousKeyword = theKeyord;
+
+
+
     //search for the product using the keyword
-    this.productService.searchProducts(theKeyord).subscribe(
-      data => {
-        this.products = data;
-      }
-    );
+    this.productService.searchProductsPaginate(this.thePageNumber - 1,
+                                               this.thePageSize,
+                                               theKeyord).subscribe(this.processResult());
   }
 
   handleListProducts(){
@@ -58,13 +76,41 @@ export class ProductListComponent implements OnInit {
     else{
       this.currentCategoryId = 1;
     }
+
+    if (this.previousCategoryId != this.currentCategoryId ){
+      this.thePageNumber = 1;
+    }
+
+    this.previousCategoryId = this.currentCategoryId;
+    console.log(`currentCategoryId=${this.currentCategoryId}, thePageNumber=${this.thePageNumber}`);
     
-                                      //"invoca" o metodo para ser usado
-    this.productService.getProductList(this.currentCategoryId).subscribe(
-      data => {
-        this.products = data; //Atribuindo os dados à matriz
-      }
-    )
+                                      
+    this.productService.getProductListPaginate(this.thePageNumber - 1,
+                                                this.thePageSize,
+                                                this.currentCategoryId)
+                                                .subscribe(this.processResult());
+  }
+
+  updatePageSize(pageSize: string){
+    this.thePageSize = +pageSize;
+    this.thePageNumber = 1;
+    this.listProducts();
+  }
+
+  processResult(){
+    return (data: any) => {
+      this.products = data._embedded.products;
+      this.thePageNumber = data.page.number + 1;
+      this.thePageSize = data.page.size;
+      this.theTotalElements = data.page.totalElements;
+    }
+  }
+
+  addToCart(theProduct: Product){
+    console.log(`Adding to Cart: ${theProduct.name}, ${theProduct.unitPrice}`);
+
+    const theCartItem = new CartItem(theProduct);
+    this.cartService.addToCart(theCartItem);
   }
 
 }

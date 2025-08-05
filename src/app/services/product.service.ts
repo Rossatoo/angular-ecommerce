@@ -26,6 +26,15 @@ export class ProductService {
 
   }
 
+  getProductListPaginate(thePage: number, thePageSize: number, theCategoryId: number): Observable<GetResponseProducts> {
+
+    //build URL based on the category id
+    const searchUrl = `${this.baseUrl}/search/findByCategoryId?id=${theCategoryId}`
+                        + `&page=${thePage}&size=${thePageSize}`;
+
+    return this.httpClient.get<GetResponseProducts>(searchUrl); 
+  }    
+
   //mapear os dados do serviço REST de dados do Spring para uma matriz de produtos
 
   // - Search Product based on the category
@@ -45,6 +54,17 @@ export class ProductService {
 
     return this.getProducts(searchUrl);
   }
+
+  searchProductsPaginate(thePage: number,
+                         thePageSize: number,
+                         theKeyword: string): Observable<GetResponseProducts> {
+
+  
+    const searchUrl = `${this.baseUrl}/search/findByNameContaining?name=${theKeyword}`
+                        + `&page=${thePage}&size=${thePageSize}`;
+
+    return this.httpClient.get<GetResponseProducts>(searchUrl); 
+  }    
   
   private getProducts(searchUrl: string): Observable<Product[]> {
     return this.httpClient.get<GetResponseProducts>(searchUrl).pipe(
@@ -64,6 +84,12 @@ export class ProductService {
 interface GetResponseProducts {
   _embedded: {
     products: Product[];
+  }
+  page: {
+    size:number,
+    totalElements: number,
+    totalPages: number,
+    number: number
   }
 }
 
